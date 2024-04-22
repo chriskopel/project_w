@@ -12,53 +12,138 @@ import geonamescache
 
 
 
+################################################################################
+#### Begin - SportsBaseClass
+class SportsBaseClass:
+
+    ## Create data lists
+    # NBA conversion table for abbr to team name
+    nba_data = [
+        ['ATL', 'Atlanta Hawks'],
+        ['BOS', 'Boston Celtics'],
+        ['BKN', 'Brooklyn Nets'],
+        ['CHA', 'Charlotte Hornets'],
+        ['CHI', 'Chicago Bulls'],
+        ['CLE', 'Cleveland Cavaliers'],
+        ['DAL', 'Dallas Mavericks'],
+        ['DEN', 'Denver Nuggets'],
+        ['DET', 'Detroit Pistons'],
+        ['GSW', 'Golden State Warriors'],
+        ['HOU', 'Houston Rockets'],
+        ['IND', 'Indiana Pacers'],
+        ['LAC', 'Los Angeles Clippers'],
+        ['LAL', 'Los Angeles Lakers'],
+        ['MEM', 'Memphis Grizzlies'],
+        ['MIA', 'Miami Heat'],
+        ['MIL', 'Milwaukee Bucks'],
+        ['MIN', 'Minnesota Timberwolves'],
+        ['NOP', 'New Orleans Pelicans'],
+        ['NYK', 'New York Knicks'],
+        ['OKC', 'Oklahoma City Thunder'],
+        ['ORL', 'Orlando Magic'],
+        ['PHI', 'Philadelphia 76ers'],
+        ['PHX', 'Phoenix Suns'],
+        ['POR', 'Portland Trail Blazers'],
+        ['SAC', 'Sacramento Kings'],
+        ['SAS', 'San Antonio Spurs'],
+        ['TOR', 'Toronto Raptors'],
+        ['UTA', 'Utah Jazz'],
+        ['WAS', 'Washington Wizards']
+    ]
+
+    # NHL list
+    nhl_data = [
+        ["AFM", "Atlanta Flames"],
+        ["ANA", "Mighty Ducks of Anaheim/Anaheim Ducks"],
+        ["ARI", "Arizona Coyotes"],
+        ["ATL", "Atlanta Thrashers"],
+        ["BOS", "Boston Bruins"],
+        ["BRK", "Brooklyn Americans"],
+        ["BUF", "Buffalo Sabres"],
+        ["CAR", "Carolina Hurricanes"],
+        ["CBJ", "Columbus Blue Jackets"],
+        ["CGS", "Bay Area Seals/California Golden Seals"],
+        ["CGY", "Calgary Flames"],
+        ["CHI", "Chicago Black Hawks/Blackhawks"],
+        ["CLE", "Cleveland Barons"],
+        ["CLR", "Colorado Rockies"],
+        ["COL", "Colorado Avalanche"],
+        ["DAL", "Dallas Stars"],
+        ["DCG", "Detroit Cougars"],
+        ["DET", "Detroit Red Wings"],
+        ["DFL", "Detroit Falcons"],
+        ["EDM", "Edmonton Oilers"],
+        ["FLA", "Florida Panthers"],
+        ["HAM", "Hamilton Tigers"],
+        ["HFD", "Hartford Whalers"],
+        ["KCS", "Kansas City Scouts"],
+        ["LAK", "Los Angeles Kings"],
+        ["MIN", "Minnesota Wild"],
+        ["MMR", "Montreal Maroons"],
+        ["MNS", "Minnesota North Stars"],
+        ["MTL", "Montreal Canadiens"],
+        ["MWN", "Montreal Wanderers"],
+        ["NJD", "New Jersey Devils"],
+        ["NSH", "Nashville Predators"],
+        ["NYA", "New York Americans"],
+        ["NYI", "New York Islanders"],
+        ["NYR", "New York Rangers"],
+        ["OAK", "California/Oakland Seals"],
+        ["OTT", "Ottawa Senators"],
+        ["PHI", "Philadelphia Flyers"],
+        ["PHX", "Phoenix Coyotes"],
+        ["PIR", "Pittsburgh Pirates"],
+        ["PIT", "Pittsburgh Penguins"],
+        ["QBD", "Quebec Bulldogs"],
+        ["QUA", "Philadelphia Quakers"],
+        ["QUE", "Quebec Nordiques"],
+        ["SEA", "Seattle Kraken"],
+        ["SEN", "Ottawa Senators (original)"],
+        ["SLE", "St. Louis Eagles"],
+        ["SJS", "San Jose Sharks"],
+        ["STL", "St. Louis Blues"],
+        ["TAN", "Toronto Hockey Club/Toronto Arenas"],
+        ["TBL", "Tampa Bay Lightning"],
+        ["TOR", "Toronto Maple Leafs"],
+        ["TSP", "Toronto St. Patricks"],
+        ["VAN", "Vancouver Canucks"],
+        ["VGK", "Vegas Golden Knights"],
+        ["WIN", "Winnipeg Jets (original)"],
+        ["WPG", "Winnipeg Jets"],
+    ]
+
+    # Define a function to apply the condition
+    def get_game_time_status(self, date):
+        if date.date() >= self.today:
+            return 'Upcoming'
+        else:
+            return 'Past'
+        
+    # Define a function to apply the condition
+    def get_season(self, row_number):
+        if row_number >= 82:
+            return 'playoffs'
+        else:
+            return 'regular season'
+
+
+
+#### End - SportsBaseClass
+################################################################################
+
 
 
 ################################################################################
 #### Begin - NBA Class to return the upcoming 5 games for specified teams (by team abbr - nba ref)
 
-class nba:
+class nba(SportsBaseClass):
 
     def __init__(self, teams_abbr, n_upcoming_games=None):
 
         self.teams_abbr = teams_abbr
         self.n_upc_games = n_upcoming_games
 
-        # Converion table for abbr to team name
-        nba_data = [
-            ['ATL', 'Atlanta Hawks'],
-            ['BOS', 'Boston Celtics'],
-            ['BKN', 'Brooklyn Nets'],
-            ['CHA', 'Charlotte Hornets'],
-            ['CHI', 'Chicago Bulls'],
-            ['CLE', 'Cleveland Cavaliers'],
-            ['DAL', 'Dallas Mavericks'],
-            ['DEN', 'Denver Nuggets'],
-            ['DET', 'Detroit Pistons'],
-            ['GSW', 'Golden State Warriors'],
-            ['HOU', 'Houston Rockets'],
-            ['IND', 'Indiana Pacers'],
-            ['LAC', 'Los Angeles Clippers'],
-            ['LAL', 'Los Angeles Lakers'],
-            ['MEM', 'Memphis Grizzlies'],
-            ['MIA', 'Miami Heat'],
-            ['MIL', 'Milwaukee Bucks'],
-            ['MIN', 'Minnesota Timberwolves'],
-            ['NOP', 'New Orleans Pelicans'],
-            ['NYK', 'New York Knicks'],
-            ['OKC', 'Oklahoma City Thunder'],
-            ['ORL', 'Orlando Magic'],
-            ['PHI', 'Philadelphia 76ers'],
-            ['PHX', 'Phoenix Suns'],
-            ['POR', 'Portland Trail Blazers'],
-            ['SAC', 'Sacramento Kings'],
-            ['SAS', 'San Antonio Spurs'],
-            ['TOR', 'Toronto Raptors'],
-            ['UTA', 'Utah Jazz'],
-            ['WAS', 'Washington Wizards']
-        ]
-
-        self.df_nba = pd.DataFrame(nba_data, columns=['abbr', 'team'])
+        self.df_nba = pd.DataFrame(self.nba_data, columns=['abbr', 'team'])
         # Get today's date
         self.today = datetime.now().date()
     
@@ -124,28 +209,97 @@ class nba:
         else:
             print("Error retrieving data")
 
-
-    # Define a function to apply the condition
-    def get_game_time_status(self, date):
-        if date.date() >= self.today:
-            return 'Upcoming'
-        else:
-            return 'Past'
-        
-    # Define a function to apply the condition
-    def get_season(self, row_number):
-        if row_number >= 82:
-            return 'playoffs'
-        else:
-            return 'regular season'
-
-        
+ 
 
     
 
 #### End - NBA Class (nba ref)
 ################################################################################
     
+
+
+################################################################################
+#### Begin - NHL Class to return the upcoming 5 games for specified teams (by team abbr - nhl ref)
+
+class nhl(SportsBaseClass):
+
+    def __init__(self, teams_abbr, n_upcoming_games=None):
+
+        self.teams_abbr = teams_abbr
+        self.n_upc_games = n_upcoming_games
+
+        self.df_nhl = pd.DataFrame(self.nhl_data, columns=['abbr', 'team'])
+        # Get today's date
+        self.today = datetime.now().date()
+    
+
+    # Build a message with the upcoming schedule
+    def msg_schedule(self):
+
+        for team in self.teams_abbr:
+            df = self.retrieve_schedule(team)
+            user_team = df['user_team'].iloc[0]
+
+            # Construct the message header
+            message = f"Upcoming schedule for the {user_team}:\n"
+
+            # Iterate over the rows and construct the message body
+            for index, row in df.iterrows():
+                game_date = row['Date']
+                start_time = row['Time']
+                home_away = row['Home/Away']
+                opponent = row['Opponent']
+                
+                message += f"{game_date} at {start_time}(ET) {home_away} the {opponent}.\n"
+
+            print(message)
+
+    
+    # Get the schedule from nba ref
+    def retrieve_schedule(self, team_abbr):
+        # URL of the website
+        url = f"https://www.hockey-reference.com/teams/{team_abbr}/2024_games.html"
+
+        # Send a GET request to the URL
+        response = requests.get(url)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            dfs_list = pd.read_html(url)
+
+            # Prep data
+            col_mapping = {
+                'Unnamed: 3': 'Home/Away',
+                'Unnamed: 7': 'Result',
+                'Unnamed: 8': 'OT'
+            }
+
+            # Organize
+            df = pd.concat(dfs_list, ignore_index=True).rename(columns=col_mapping)
+            df['Home/Away'] = df['Home/Away'].fillna("vs.")
+            df = df[df['Date'] != 'Date'].reset_index(drop=True)
+            df['computer_date'] = pd.to_datetime(df['Date'])
+            df['Date'] = df['computer_date'].dt.strftime('%a, %b %d, %Y')
+            df['user_team'] = self.df_nhl['team'][self.df_nhl['abbr'] == team_abbr].iloc[0]
+            
+            # Apply the function to create the new column
+            df['GameTimeStatus'] = df['computer_date'].apply(lambda x: self.get_game_time_status(x))
+            df['game_type'] = df.index.to_series().apply(lambda x: self.get_season(x))
+
+            # new slim table for upcoming games
+            df_upcoming_slim = df[df['GameTimeStatus'] == 'Upcoming'][['Date','Time','Home/Away','Opponent','user_team']].reset_index(drop=True).head(self.n_upc_games)
+
+            return df_upcoming_slim
+        
+        else:
+            print("Error retrieving data")
+
+ 
+
+    
+
+#### End - NHL Class (nhl ref)
+################################################################################
 
 
 
@@ -451,8 +605,8 @@ class weather:
 # - - pick out the min max and avg 
 #
 #
-# - Class: nba 
-# - - error handling when adding new cols to the df...if the opponent hasn't been decided yet then a value is null which leads to an error
+# - CHANGE FOOTBALL (SOCCER) CLASS TO THE FBREF? https://fbref.com/en/squads/b8fd03ef/Manchester-City-Stats#all_matchlogs
+# - - would be the "same" source for all data then (pros and cons, but we know it's easy to pull from)
 # 
 #
 ### End Dev notes
