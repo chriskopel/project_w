@@ -6,110 +6,152 @@ import requests
 from bs4 import BeautifulSoup
 
 from datetime import datetime, timedelta
+import pytz
 
-from nba_api.stats.static import teams, players
-from nba_api.stats.endpoints import leaguegamefinder, playernextngames, commonallplayers
+import geonamescache
+
+
 
 
 
 ################################################################################
-#### Begin - NBA Class to return the upcoming 5 games for specified teams (by team name)
+#### Begin - NBA Class to return the upcoming 5 games for specified teams (by team abbr - nba ref)
+
 class nba:
 
-    def __init__(self, nba_teams):
-        self.nba_teams = nba_teams
+    def __init__(self, teams_abbr, n_upcoming_games=None):
 
-        # Team IDs
-        self.team_ids = []
-        for team in nba_teams:
-            team_id = self.get_team_id(team)
-            self.team_ids.append(team_id)
+        self.teams_abbr = teams_abbr
+        self.n_upc_games = n_upcoming_games
 
-        # Players 
-        self.team_players = []
-        for id in self.team_ids:
-            player = self.get_team_player(id)
-            self.team_players.append(player)
+        # Converion table for abbr to team name
+        nba_data = [
+            ['ATL', 'Atlanta Hawks'],
+            ['BOS', 'Boston Celtics'],
+            ['BKN', 'Brooklyn Nets'],
+            ['CHA', 'Charlotte Hornets'],
+            ['CHI', 'Chicago Bulls'],
+            ['CLE', 'Cleveland Cavaliers'],
+            ['DAL', 'Dallas Mavericks'],
+            ['DEN', 'Denver Nuggets'],
+            ['DET', 'Detroit Pistons'],
+            ['GSW', 'Golden State Warriors'],
+            ['HOU', 'Houston Rockets'],
+            ['IND', 'Indiana Pacers'],
+            ['LAC', 'Los Angeles Clippers'],
+            ['LAL', 'Los Angeles Lakers'],
+            ['MEM', 'Memphis Grizzlies'],
+            ['MIA', 'Miami Heat'],
+            ['MIL', 'Milwaukee Bucks'],
+            ['MIN', 'Minnesota Timberwolves'],
+            ['NOP', 'New Orleans Pelicans'],
+            ['NYK', 'New York Knicks'],
+            ['OKC', 'Oklahoma City Thunder'],
+            ['ORL', 'Orlando Magic'],
+            ['PHI', 'Philadelphia 76ers'],
+            ['PHX', 'Phoenix Suns'],
+            ['POR', 'Portland Trail Blazers'],
+            ['SAC', 'Sacramento Kings'],
+            ['SAS', 'San Antonio Spurs'],
+            ['TOR', 'Toronto Raptors'],
+            ['UTA', 'Utah Jazz'],
+            ['WAS', 'Washington Wizards']
+        ]
 
-        # Team Schedules
-        self.dict_of_dfs = {}
-        for player in self.team_players:
-            df = self.get_team_schedule(player)
-            self.dict_of_dfs[player] = df
-
-
-
-    ## Final function to return schedule
-    def return_sch_msg(self, dict_of_dfs):
-        # Display messages
-        self.display_messages = []
-        for key, df in dict_of_dfs.items():
-            # Filter original df
-            df = df[['GAME_DATE','HOME_TEAM_ABBREVIATION','VISITOR_TEAM_ABBREVIATION','GAME_TIME']]
-            df['game_time_mountain'] = df['GAME_TIME'].apply(self.subtract_two_hours)
-            df = df.drop(columns='GAME_TIME')
-
-            # Create message from the columns
-            df['display_text'] = df['GAME_DATE'] + ': ' + df['VISITOR_TEAM_ABBREVIATION'] + ' @ ' + df['HOME_TEAM_ABBREVIATION'] + ' - ' + df['game_time_mountain']
-            df = df[['display_text']]
-            final_msg = df.display_text.to_string(index=False)
-            self.display_messages.append(final_msg)
-
-        return self.display_messages
-
-
-    ## Function to get the team ID by team name
-    def get_team_id(self, team_name):
-        nba_teams = teams.get_teams()
-        for team in nba_teams:
-            if team['full_name'] == team_name:
-                return team['id']
-        return None
-
-
-    ## Function to get a player of a specific team (need a player to lookup the schedule)
-    def get_team_player(self, team_id):
-        # Get all players who were active in the current season
-        all_players = commonallplayers.CommonAllPlayers(is_only_current_season=1)
-        all_players_df = all_players.get_data_frames()[0]
-        
-        # Filter the players to get those who are currently on the specified team
-        team_roster = all_players_df[all_players_df['TEAM_ID'] == team_id]
-        player = team_roster.DISPLAY_FIRST_LAST.iloc[0]
-
-        return player
+        self.df_nba = pd.DataFrame(nba_data, columns=['abbr', 'team'])
+        # Get today's date
+        self.today = datetime.now().date()
     
 
-    ## Function to get the team's schedule 
-    def get_team_schedule(self, team_player):
-        # Load all players, get player id for input player
-        all_players = players.get_players()
-        player_stats = [player for player in all_players if player['full_name'] == team_player]
-        player_id = player_stats[0]['id']
+    # Build a message with the upcoming schedule
+    def msg_schedule(self):
 
-        # Grab the schedule
-        player_next_n_games = playernextngames.PlayerNextNGames(player_id=player_id)
-        df_player_next_n_games = player_next_n_games.get_data_frames()[0]
-        next_n_games = df_player_next_n_games.head()
+        for team in self.teams_abbr:
+            df = self.retrieve_schedule(team)
+            user_team = df['user_team'].iloc[0]
 
-        return next_n_games
+            # Construct the message header
+            message = f"Upcoming schedule for the {user_team}:\n"
+
+            # Iterate over the rows and construct the message body
+            for index, row in df.iterrows():
+                game_date = row['Date']
+                start_time = row['Start (ET)']
+                home_away = row['Home/Away']
+                opponent = row['Opponent']
+                
+                message += f"{game_date} at {start_time}(ET) {home_away} the {opponent}.\n"
+
+            print(message)
+
+    
+    # Get the schedule from nba ref
+    def retrieve_schedule(self, team_abbr):
+        # URL of the website
+        url = f"https://www.basketball-reference.com/teams/{team_abbr}/2024_games.html#games"
+
+        # Send a GET request to the URL
+        response = requests.get(url)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            dfs_list = pd.read_html(url)
+
+            # Prep data
+            drop_cols = ['Unnamed: 3','Unnamed: 4']
+            col_mapping = {
+                'Unnamed: 5': 'Home/Away',
+                'Unnamed: 7': 'Result',
+                'Unnamed: 8': 'OT'
+            }
+
+            # Organize
+            df = pd.concat(dfs_list, ignore_index=True).drop(columns=drop_cols).rename(columns=col_mapping)
+            df['Home/Away'] = df['Home/Away'].fillna("vs.")
+            df = df[df['Date'] != 'Date'].reset_index(drop=True)
+            df['computer_date'] = pd.to_datetime(df['Date'], format='%a, %b %d, %Y')
+            df['user_team'] = self.df_nba['team'][self.df_nba['abbr'] == team_abbr].iloc[0]
+            
+            # Create new cols from fns
+            df['GameTimeStatus'] = df['computer_date'].apply(lambda x: self.get_game_time_status(x))
+            df['game_type'] = df.index.to_series().apply(lambda x: self.get_season(x))
+
+            # new slim table for upcoming games
+            df_upcoming_slim = df[df['GameTimeStatus'] == 'Upcoming'][['Date','Start (ET)','Home/Away','Opponent','user_team']].reset_index(drop=True).head(self.n_upc_games)
+
+            return df_upcoming_slim
+        
+        else:
+            print("Error retrieving data")
+
+
+    # Define a function to apply the condition
+    def get_game_time_status(self, date):
+        if date.date() >= self.today:
+            return 'Upcoming'
+        else:
+            return 'Past'
+        
+    # Define a function to apply the condition
+    def get_season(self, row_number):
+        if row_number >= 82:
+            return 'playoffs'
+        else:
+            return 'regular season'
+
+        
+
     
 
-    # Function to subtract two hours from the time string
-    def subtract_two_hours(self, time_str):
-        # Convert string to datetime object
-        datetime_obj = datetime.strptime(time_str, '%I:%M %p')
-        
-        # Subtract two hours
-        datetime_obj -= timedelta(hours=2)
-        
-        # Format the datetime object as a string in '%I:%M %p' format
-        return datetime_obj.strftime('%I:%M %p')
-    
-
-#### End - NBA Class
+#### End - NBA Class (nba ref)
 ################################################################################
     
+
+
+
+
+
+
 
 
 
@@ -219,3 +261,200 @@ class football:
 
 #### End - Football class by team name
 ################################################################################
+
+
+
+
+
+
+
+
+
+################################################################################
+#### Begin - Weather Class to return current and forecasted weather by city name
+class weather:
+
+    def __init__(self, city_names=['Denver']):
+
+        self.weather_data_dict = self.get_weather_data(city_names)
+
+        
+    ## Get the lat lon of the city 
+    def get_weather_data(self, city_names):
+
+        # Create an instance of the GeoNamesCache
+        gc = geonamescache.GeonamesCache()
+
+        # Retrieve cities data
+        cities = gc.get_cities()
+
+        dict_city_lat_lon = {}
+        for city_name in city_names:
+            # Search for the city in the cities data
+            for city_code, city_data in cities.items():
+                if city_data['name'] == city_name:
+                    # Extract latitude and longitude
+                    latitude = city_data['latitude']
+                    longitude = city_data['longitude']
+
+                    dict_city_lat_lon[city_name] = [latitude, longitude]
+                    break
+            else:
+                print(f"Could not find city name: {city_name}")
+
+
+
+        # Define a custom User-Agent header
+        headers = {
+            "User-Agent": "YourAppName/1.0 (your-email@example.com) _ 11298370iahdjhiaosfdi8y98 y9801"
+        }
+
+
+        weather_data_dict = {}
+        for city, lat_lon in dict_city_lat_lon.items():
+            
+            lat, lon = lat_lon
+
+            # Specify the MET API URL with the retrieved latitude and longitude
+            url = f"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat={lat}&lon={lon}"
+
+            # Make an API request to the MET API with the custom User-Agent header
+            response = requests.get(url, headers=headers)
+
+            # Parse the JSON response
+            weather_data_dict[city] = response.json()
+
+        
+        return weather_data_dict
+
+
+    ### Parse weather data
+    # Function to parse the forecasted weather data
+    def parse_weather_data(self):
+
+        for city, data in self.weather_data_dict.items():
+
+            print("_______________________________________________________")
+            print(f"Weather for {city}:\n")
+            
+            timeseries = data['properties']['timeseries']
+            
+            # Iterate through each time series entry
+            for entry in timeseries:
+                time = self.convert_to_mountain_time(entry['time'])
+                instant_data = entry['data']['instant']['details']
+                
+                # Current instant data
+                current_temp_celsius = instant_data['air_temperature']
+                current_temp_fahrenheit = self.celsius_to_fahrenheit(current_temp_celsius)
+                current_wind_speed_ms = instant_data['wind_speed']
+                current_wind_speed_mph = self.ms_to_mph(current_wind_speed_ms)
+                current_wind_direction = instant_data['wind_from_direction']
+                # Convert wind direction in degrees to compass direction
+                compass_direction = self.wind_direction_to_compass(current_wind_direction)
+
+                # Get symbol code for instant data from the next 1-hour forecast data
+                if 'next_1_hours' in entry['data']:
+                    next_1_hour = entry['data']['next_1_hours']
+                    symbol_code_instant = next_1_hour['summary']['symbol_code']
+                else:
+                    symbol_code_instant = 'N/A'  # If next 1-hour forecast data is unavailable
+
+                # Retrieve precipitation data for the next 1, 6, and 12 hours
+                precip_next_1_hour = next_1_hour['details']['precipitation_amount'] if 'next_1_hours' in entry['data'] and 'details' in entry['data']['next_1_hours'] else 0.0
+                precip_next_6_hour = entry['data']['next_6_hours']['details']['precipitation_amount'] if 'next_6_hours' in entry['data'] and 'details' in entry['data']['next_6_hours'] else 0.0
+                
+
+                # Print
+                prnt_str_time = f"Time: {time} - {symbol_code_instant}\n"
+                prnt_str_weather_0 = f"Temperature: {current_temp_fahrenheit:.2f}°F, Wind speed: {current_wind_speed_mph:.2f} mph, Wind direction: {compass_direction}\n"
+                prnt_str_weather_1 = f"Precip next 1 hour: {precip_next_1_hour} mm, Precip next 6 hours: {precip_next_6_hour} mm\n"
+
+                final_msg =  prnt_str_time + prnt_str_weather_0 + prnt_str_weather_1
+
+                print(final_msg)
+
+    
+
+
+    ##### Helper functions
+    # Helper function to convert Celsius to Fahrenheit
+    def celsius_to_fahrenheit(self, celsius):
+        return celsius * 9 / 5 + 32
+
+
+    # Helper function to convert meters per second to miles per hour
+    def ms_to_mph(self, meters_per_second):
+        return meters_per_second * 2.237
+
+
+    # Helper function to convert wind direction in degrees to compass direction
+    def wind_direction_to_compass(self, degrees):
+        compass_points = [
+            "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+            "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"
+        ]
+        # Calculate the index in the compass_points list based on the degrees
+        index = int((degrees + 11.25) / 22.5) % 16
+        return compass_points[index]
+
+
+    # Function to convert UTC timestamp to Mountain Time (Denver, CO)
+    def convert_to_mountain_time(self, utc_timestamp, format="%Y-%m-%d %H:%M"):
+
+        # Define the UTC and Mountain Time (Denver, CO) time zones
+        utc_timezone = pytz.utc
+        mountain_timezone = pytz.timezone('America/Denver')
+
+
+        # Parse the UTC timestamp to a datetime object
+        utc_time = datetime.fromisoformat(utc_timestamp.rstrip('Z'))
+        
+        # Make the datetime object timezone aware (UTC timezone)
+        utc_time = utc_timezone.localize(utc_time)
+        
+        # Convert the UTC time to Mountain Time (Denver, CO)
+        mountain_time = utc_time.astimezone(mountain_timezone)
+        
+        # Return the Mountain Time in the specified format
+        return mountain_time.strftime(format)
+    
+    ##### End helper functions
+
+
+
+#### End - Weather Class by city name
+################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#######################################################################################################################
+#######################################################################################################################
+### Dev notes
+# Updates to make:
+# - Class: weather
+# - - Autoformat tz to selected city
+# - - only show n forward hours (current (0),1,3,5,12,24,48,72?)
+# - - find a better way to display (chart?)
+# - - pick out the min max and avg 
+#
+#
+# - Class: nba 
+# - - error handling when adding new cols to the df...if the opponent hasn't been decided yet then a value is null which leads to an error
+# 
+#
+### End Dev notes
+#######################################################################################################################
+#######################################################################################################################
