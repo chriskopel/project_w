@@ -518,6 +518,12 @@ class weather:
 # - - would be the "same" source for all data then (pros and cons, but we know it's easy to pull from)
 # 
 #
+#
+# - Change filepath lookup for csvs to hide the full directory
+#
+# 
+#
+#
 ### End Dev notes
 #######################################################################################################################
 #######################################################################################################################
