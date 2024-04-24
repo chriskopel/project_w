@@ -10,16 +10,27 @@ import pytz
 
 import geonamescache
 
+import os
+
 
 
 ################################################################################
 #### Begin - SportsBaseClass
 class SportsBaseClass:
 
-    ## Lookup files
-    football_data_path = r"C:\Users\Owner\Documents\Data Projects\GitHub\Apps\project_w\data\football_data.csv"
-    nba_team_abbr_lkp_path = r"C:\Users\Owner\Documents\Data Projects\GitHub\Apps\project_w\data\nba_team_abbr.csv"
-    nhl_team_abbr_lkp_path = r"C:\Users\Owner\Documents\Data Projects\GitHub\Apps\project_w\data\nhl_team_abbr.csv"
+    # Get the directory of the current script
+    script_dir = os.path.dirname(__file__)
+
+    # Define the relative path to the CSV file
+    footy_relative_path = os.path.join("..", "..", "project_w", "data", "football_data.csv")
+    nba_relative_path = os.path.join("..", "..", "project_w", "data", "nba_team_abbr.csv")
+    nhl_relative_path = os.path.join("..", "..", "project_w", "data", "nhl_team_abbr.csv")
+
+    # Construct the absolute path for the lookup files
+    football_data_path = os.path.abspath(os.path.join(script_dir, footy_relative_path))
+    nba_team_abbr_lkp_path = os.path.abspath(os.path.join(script_dir, nba_relative_path))
+    nhl_team_abbr_lkp_path = os.path.abspath(os.path.join(script_dir, nhl_relative_path))
+
 
 
     # Define a function to apply the condition
