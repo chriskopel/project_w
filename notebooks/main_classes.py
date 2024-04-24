@@ -16,101 +16,11 @@ import geonamescache
 #### Begin - SportsBaseClass
 class SportsBaseClass:
 
-    ## Create data lists
-    # NBA conversion table for abbr to team name
-    nba_data = [
-        ['ATL', 'Atlanta Hawks'],
-        ['BOS', 'Boston Celtics'],
-        ['BKN', 'Brooklyn Nets'],
-        ['CHA', 'Charlotte Hornets'],
-        ['CHI', 'Chicago Bulls'],
-        ['CLE', 'Cleveland Cavaliers'],
-        ['DAL', 'Dallas Mavericks'],
-        ['DEN', 'Denver Nuggets'],
-        ['DET', 'Detroit Pistons'],
-        ['GSW', 'Golden State Warriors'],
-        ['HOU', 'Houston Rockets'],
-        ['IND', 'Indiana Pacers'],
-        ['LAC', 'Los Angeles Clippers'],
-        ['LAL', 'Los Angeles Lakers'],
-        ['MEM', 'Memphis Grizzlies'],
-        ['MIA', 'Miami Heat'],
-        ['MIL', 'Milwaukee Bucks'],
-        ['MIN', 'Minnesota Timberwolves'],
-        ['NOP', 'New Orleans Pelicans'],
-        ['NYK', 'New York Knicks'],
-        ['OKC', 'Oklahoma City Thunder'],
-        ['ORL', 'Orlando Magic'],
-        ['PHI', 'Philadelphia 76ers'],
-        ['PHX', 'Phoenix Suns'],
-        ['POR', 'Portland Trail Blazers'],
-        ['SAC', 'Sacramento Kings'],
-        ['SAS', 'San Antonio Spurs'],
-        ['TOR', 'Toronto Raptors'],
-        ['UTA', 'Utah Jazz'],
-        ['WAS', 'Washington Wizards']
-    ]
+    ## Lookup files
+    football_data_path = r"C:\Users\Owner\Documents\Data Projects\GitHub\Apps\project_w\data\football_data.csv"
+    nba_team_abbr_lkp_path = r"C:\Users\Owner\Documents\Data Projects\GitHub\Apps\project_w\data\nba_team_abbr.csv"
+    nhl_team_abbr_lkp_path = r"C:\Users\Owner\Documents\Data Projects\GitHub\Apps\project_w\data\nhl_team_abbr.csv"
 
-    # NHL list
-    nhl_data = [
-        ["AFM", "Atlanta Flames"],
-        ["ANA", "Mighty Ducks of Anaheim/Anaheim Ducks"],
-        ["ARI", "Arizona Coyotes"],
-        ["ATL", "Atlanta Thrashers"],
-        ["BOS", "Boston Bruins"],
-        ["BRK", "Brooklyn Americans"],
-        ["BUF", "Buffalo Sabres"],
-        ["CAR", "Carolina Hurricanes"],
-        ["CBJ", "Columbus Blue Jackets"],
-        ["CGS", "Bay Area Seals/California Golden Seals"],
-        ["CGY", "Calgary Flames"],
-        ["CHI", "Chicago Black Hawks/Blackhawks"],
-        ["CLE", "Cleveland Barons"],
-        ["CLR", "Colorado Rockies"],
-        ["COL", "Colorado Avalanche"],
-        ["DAL", "Dallas Stars"],
-        ["DCG", "Detroit Cougars"],
-        ["DET", "Detroit Red Wings"],
-        ["DFL", "Detroit Falcons"],
-        ["EDM", "Edmonton Oilers"],
-        ["FLA", "Florida Panthers"],
-        ["HAM", "Hamilton Tigers"],
-        ["HFD", "Hartford Whalers"],
-        ["KCS", "Kansas City Scouts"],
-        ["LAK", "Los Angeles Kings"],
-        ["MIN", "Minnesota Wild"],
-        ["MMR", "Montreal Maroons"],
-        ["MNS", "Minnesota North Stars"],
-        ["MTL", "Montreal Canadiens"],
-        ["MWN", "Montreal Wanderers"],
-        ["NJD", "New Jersey Devils"],
-        ["NSH", "Nashville Predators"],
-        ["NYA", "New York Americans"],
-        ["NYI", "New York Islanders"],
-        ["NYR", "New York Rangers"],
-        ["OAK", "California/Oakland Seals"],
-        ["OTT", "Ottawa Senators"],
-        ["PHI", "Philadelphia Flyers"],
-        ["PHX", "Phoenix Coyotes"],
-        ["PIR", "Pittsburgh Pirates"],
-        ["PIT", "Pittsburgh Penguins"],
-        ["QBD", "Quebec Bulldogs"],
-        ["QUA", "Philadelphia Quakers"],
-        ["QUE", "Quebec Nordiques"],
-        ["SEA", "Seattle Kraken"],
-        ["SEN", "Ottawa Senators (original)"],
-        ["SLE", "St. Louis Eagles"],
-        ["SJS", "San Jose Sharks"],
-        ["STL", "St. Louis Blues"],
-        ["TAN", "Toronto Hockey Club/Toronto Arenas"],
-        ["TBL", "Tampa Bay Lightning"],
-        ["TOR", "Toronto Maple Leafs"],
-        ["TSP", "Toronto St. Patricks"],
-        ["VAN", "Vancouver Canucks"],
-        ["VGK", "Vegas Golden Knights"],
-        ["WIN", "Winnipeg Jets (original)"],
-        ["WPG", "Winnipeg Jets"],
-    ]
 
     # Define a function to apply the condition
     def get_game_time_status(self, date):
@@ -143,7 +53,7 @@ class nba(SportsBaseClass):
         self.teams_abbr = teams_abbr
         self.n_upc_games = n_upcoming_games
 
-        self.df_nba = pd.DataFrame(self.nba_data, columns=['abbr', 'team'])
+        self.df_nba = pd.read_csv(self.nba_team_abbr_lkp_path)
         # Get today's date
         self.today = datetime.now().date()
     
@@ -228,7 +138,7 @@ class nhl(SportsBaseClass):
         self.teams_abbr = teams_abbr
         self.n_upc_games = n_upcoming_games
 
-        self.df_nhl = pd.DataFrame(self.nhl_data, columns=['abbr', 'team'])
+        self.df_nhl = pd.read_csv(self.nhl_team_abbr_lkp_path)
         # Get today's date
         self.today = datetime.now().date()
     
@@ -316,8 +226,7 @@ class football:
     def __init__(self, football_teams):
         self.football_teams = football_teams
         self.agent = 'Mozilla/5.0 (Windows NT 10.0; Windows; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.114 Safari/537.36'
-        football_data_path = r"C:\Users\Owner\Documents\Data Projects\GitHub\Apps\project_w\data\football_data.csv"
-        self.df_footie = pd.read_csv(football_data_path)
+        self.df_footie = pd.read_csv(self.football_data_path)
 
 
     def get_games(self, prev_or_next):
