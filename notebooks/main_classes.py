@@ -232,7 +232,7 @@ class nhl(SportsBaseClass):
 
 ################################################################################
 #### Begin - Football (soccer) Class to return the upcoming 5 games for specified teams (by team name)
-class football:
+class football(SportsBaseClass):
 
     def __init__(self, football_teams):
         self.football_teams = football_teams
