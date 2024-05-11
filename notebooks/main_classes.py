@@ -88,7 +88,8 @@ class nba(SportsBaseClass):
                 
                 message += f"{game_date} at {start_time}(ET) {home_away} the {opponent}.\n"
 
-            print(message)
+            return message
+            # print(message)
 
     
     # Get the schedule from nba ref
