@@ -1,0 +1,29 @@
+<MyLayout>:
+    orientation: 'vertical'
+    FloatLayout:
+        Button:
+            id: main_button
+            text: "Select NBA Team"
+            size_hint: None, None
+            size: 200, 100
+            pos_hint: {"center_x": 0.5, "top": 1}
+        Button:
+            text: 'Submit'
+            size_hint: None, None
+            size: 200, 100
+            pos_hint: {"center_x": 0.5, "y": 0.4}
+            on_release:
+                app.root.get_screen('main').manager.transition.direction = 'left'
+                app.root.current = 'second'
+
+<SecondScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'You selected:'
+            font_size: 30
+            size_hint_y: 0.1
+        Label:
+            id: selected_team_label
+            text: root.selected_team  # Bind to the StringProperty
+            font_size: 50
