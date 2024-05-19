@@ -1,3 +1,9 @@
+#####
+#####
+# This version successfully returns the schedule for the selcted team
+# - does error if team doesn't have an upcoming game
+#####
+#####
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.dropdown import DropDown
@@ -19,32 +25,50 @@ class MyLayout(BoxLayout):
 
         for nba_team in nba_abbr_list:
             btn = Button(text=nba_team, size_hint_y=None, height=44)
-            btn.bind(on_release=lambda btn: self.dropdown.select(btn.text))
+            btn.bind(on_release=lambda btn: self.select_option(btn.text))
             self.dropdown.add_widget(btn)
 
         self.main_button = self.ids.main_button
         self.main_button.bind(on_release=self.dropdown.open)
-        self.dropdown.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
+
+        # Attribute to store the selected option
+        self.selected_option = None
+
+    def select_option(self, option):
+        self.main_button.text = option
+        self.selected_option = option
+        self.dropdown.dismiss()
+
+    def go_to_second_screen(self):
+        app = App.get_running_app()
+        app.root.get_screen('second').selected_team = self.selected_option
+
+        # Pull the schedule for the selected team
+        app.root.get_screen('second').slct_team_sch = mc.nba(teams_abbr=[self.selected_option]).msg_schedule()
+
+        app.root.current = 'second'
 
 
-    def on_select_team(self, team):
-        self.selected_team = team  # Store the selected team in the variable
 
 class SecondScreen(Screen):
-    # nba_selection_output = mc.nba(teams_abbr = ['DEN'])
-    test_var = 'test'
-    selected_team = StringProperty(test_var)  # Define a StringProperty
-        
+    selected_team = StringProperty('')
+    slct_team_sch = StringProperty('')
+
+
 
 class WhatsUpApp(App):
     def build(self):
         sm = ScreenManager()
+        
         screen = Screen(name='main')
-        screen.add_widget(MyLayout())
+        layout = MyLayout()
+        screen.add_widget(layout)
         sm.add_widget(screen)
+        
         second_screen = SecondScreen(name='second')
         sm.add_widget(second_screen)
+        
         return sm
-    
+
 if __name__ == '__main__':
     WhatsUpApp().run()
