@@ -1,7 +1,9 @@
 #####
 #####
-# This version successfully returns the schedule for the selcted team
-# - does error if team doesn't have an upcoming game
+# This version successfully returns the schedule for the selcted team (and returns appr. msg if no upcoming games)
+# Next, have another selection for soccer and group them all together.
+# We want the final output to be a schedule of all events, not just by team, but aggregated by day, so we'll need to combine all the data 
+#  and then config as one schedule
 #####
 #####
 from kivy.app import App

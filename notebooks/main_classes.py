@@ -72,24 +72,32 @@ class nba(SportsBaseClass):
     # Build a message with the upcoming schedule
     def msg_schedule(self):
 
+        message = ''
+
         for team in self.teams_abbr:
             df = self.retrieve_schedule(team)
-            user_team = df['user_team'].iloc[0]
 
-            # Construct the message header
-            message = f"Upcoming schedule for the {user_team}:\n"
-
-            # Iterate over the rows and construct the message body
-            for index, row in df.iterrows():
-                game_date = row['Date']
-                start_time = row['Start (ET)']
-                home_away = row['Home/Away']
-                opponent = row['Opponent']
+            # Check if df is empty
+            if df.empty:
+                message += f"No games found for {team}\n"
                 
-                message += f"{game_date} at {start_time}(ET) {home_away} the {opponent}.\n"
+            else:
+                user_team = df['user_team'].iloc[0]
 
-            return message
-            # print(message)
+                # Construct the message header
+                message += f"Upcoming schedule for the {user_team}:\n"
+
+                # Iterate over the rows and construct the message body
+                for index, row in df.iterrows():
+                    game_date = row['Date']
+                    start_time = row['Start (ET)']
+                    home_away = row['Home/Away']
+                    opponent = row['Opponent']
+                    
+                    message += f"{game_date} at {start_time}(ET) {home_away} the {opponent}.\n"
+
+        return message
+        # print(message)
 
     
     # Get the schedule from nba ref
