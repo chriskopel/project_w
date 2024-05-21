@@ -14,16 +14,16 @@
             pos_hint: {"center_x": 0.5, "y": 0.4}
             on_release:
                 app.root.get_screen('main').manager.transition.direction = 'left'
-                app.root.current = 'second'
+                root.go_to_second_screen()  # Call the method to go to the second screen
 
 <SecondScreen>:
     BoxLayout:
         orientation: 'vertical'
         Label:
-            text: 'You selected:'
+            text: root.selected_team
             font_size: 30
             size_hint_y: 0.1
         Label:
             id: selected_team_label
-            text: root.selected_team  # Bind to the StringProperty
-            font_size: 50
+            text: root.slct_team_sch  # Bind to the StringProperty
+            font_size: 24
