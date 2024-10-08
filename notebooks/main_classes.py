@@ -101,7 +101,9 @@ class nba(SportsBaseClass):
 
     
     # Get the schedule from nba ref
-    def retrieve_schedule(self, team_abbr):
+    def retrieve_schedule(self, team_abbr=None):
+        team_abbr = self.teams_abbr[0] if team_abbr is None else team_abbr
+
         # URL of the website
         url = f"https://www.basketball-reference.com/teams/{team_abbr}/2024_games.html#games"
 
@@ -539,7 +541,7 @@ class weather:
 # 
 #
 #
-# - Change filepath lookup for csvs to hide the full directory
+# - Change filepath lookup for csvs to hide the full directory (done?)
 #
 # 
 #
