@@ -105,7 +105,8 @@ class nba(SportsBaseClass):
         team_abbr = self.teams_abbr[0] if team_abbr is None else team_abbr
 
         # URL of the website
-        url = f"https://www.basketball-reference.com/teams/{team_abbr}/2024_games.html#games"
+        url = f"https://www.basketball-reference.com/teams/{team_abbr}/2025_games.html"
+        # https://www.basketball-reference.com/teams/BOS/2025_games.html
 
         # Send a GET request to the URL
         response = requests.get(url)
@@ -188,9 +189,10 @@ class nhl(SportsBaseClass):
 
     
     # Get the schedule from nba ref
-    def retrieve_schedule(self, team_abbr):
+    def retrieve_schedule(self, team_abbr=None):
+        team_abbr = self.teams_abbr[0] if team_abbr is None else team_abbr
         # URL of the website
-        url = f"https://www.hockey-reference.com/teams/{team_abbr}/2024_games.html"
+        url = f"https://www.hockey-reference.com/teams/{team_abbr}/2025_games.html"
 
         # Send a GET request to the URL
         response = requests.get(url)

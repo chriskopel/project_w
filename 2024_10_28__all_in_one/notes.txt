@@ -1,0 +1,10 @@
+Maybe we re-structure this so that we keep the data locally and don't have to scrape every call.
+-lots of obv. positives
+-downside is data will not be as up to date
+-- for this we can run an upsert script once a week(?) to refresh periodically
+
+
+Steps:
+1. Grab as much data as possible for all the leagues
+2. Insert into a consolidated csv
+3. Build upsert script
