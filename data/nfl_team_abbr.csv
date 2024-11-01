@@ -1,0 +1,33 @@
+ID,team,abbr,Conference,Division
+1,Arizona Cardinals,crd,NFC,West
+2,Atlanta Falcons,atl,NFC,South
+3,Baltimore Ravens,rav,AFC,North
+4,Buffalo Bills,buf,AFC,East
+5,Carolina Panthers,car,NFC,South
+6,Chicago Bears,chi,NFC,North
+7,Cincinnati Bengals,cin,AFC,North
+8,Cleveland Browns,cle,AFC,North
+9,Dallas Cowboys,dal,NFC,East
+10,Denver Broncos,den,AFC,West
+11,Detroit Lions,det,NFC,North
+12,Green Bay Packers,gnb,NFC,North
+13,Houston Texans,htx,AFC,South
+14,Indianapolis Colts,clt,AFC,South
+15,Jacksonville Jaguars,jax,AFC,South
+16,Kansas City Chiefs,kan,AFC,West
+17,Miami Dolphins,mia,AFC,East
+18,Minnesota Vikings,min,NFC,North
+19,New England Patriots,nwe,AFC,East
+20,New Orleans Saints,nor,NFC,South
+21,New York Giants,nyg,NFC,East
+22,New York Jets,nyj,AFC,East
+23,Las Vegas Raiders,rai,AFC,West
+24,Philadelphia Eagles,phi,NFC,East
+25,Pittsburgh Steelers,pit,AFC,North
+26,Los Angeles Chargers,sdg,AFC,West
+27,San Francisco 49ers,sfo,NFC,West
+28,Seattle Seahawks,sea,NFC,West
+29,Los Angeles Rams,ram,NFC,West
+30,Tampa Bay Buccaneers,tam,NFC,South
+31,Tennessee Titans,oti,AFC,South
+32,Washington Commanders,was,NFC,East
