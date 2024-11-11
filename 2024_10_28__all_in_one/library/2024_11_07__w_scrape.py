@@ -17,10 +17,13 @@ from selenium.webdriver.chrome.options import Options
 
 from bs4 import BeautifulSoup
 
-from datetime import datetime
+from datetime import datetime, time
 import time
+import pytz
 
 import requests
+
+
 
 
 
@@ -47,9 +50,15 @@ class scrape_w:
         ## misc. vars
         self.chrome_driver_path = os.getenv('chrome_driver_path') # # Get the ChromeDriver path from your environment variable
         self.today_str = datetime.now().strftime("%Y_%m_%d") # # Get today's date in the desired format
+        self.today = pd.Timestamp.today().date()
 
 
 
+    ##############################################################################################################
+    # Begin scrapers
+
+    #######################################################
+    # Begin master scraper
     ## General scraper to be invoked in user code
     def scrape(self, subject: list):
 
@@ -70,6 +79,11 @@ class scrape_w:
                 self.scrape_nhl()
             elif item == "nfl":
                 self.scrape_nfl()
+
+
+    
+    # End master scraper
+    #######################################################
 
 
 
@@ -379,3 +393,162 @@ class scrape_w:
 
     # End NFL
     #######################################################
+
+    # End Scrapers
+    ##############################################################################################################
+
+
+
+
+
+
+    ##############################################################################################################
+    # Begin organizing the data
+
+    def organize_data(self, save, fb_master_filename, nba_master_filename, nhl_master_filename, nfl_master_filename):
+
+        # Define allowed save options
+        allowed_save_options = {"both", "master", "future"}
+        
+        # Validate the save argument
+        if save not in allowed_save_options:
+            raise ValueError(f"Invalid save option. Choose from: {', '.join(allowed_save_options)}")
+    
+
+        #  Get the current year
+        current_year = datetime.now().year
+        next_year = current_year + 1
+
+        # Define a custom date parser for the corresponding formats
+        fb_date_parser = lambda x: pd.to_datetime(x, format="%d/%m/%y").date()
+        nba_nhl_date_parser = lambda x: pd.to_datetime(x, format="%a, %b %d, %Y").date()
+        nfl_date_parser = lambda x: pd.to_datetime(f"{x}, {next_year}" if "Jan" in x else f"{x}, {current_year}", format="%a, %b %d, %Y").date() if pd.notna(x) else np.nan
+
+        # Master data files for each subject
+        fb_master_fp = os.path.join(self.data_base_dir, fb_master_filename)
+        nba_master_fp = os.path.join(self.data_base_dir, nba_master_filename)
+        nhl_master_fp = os.path.join(self.data_base_dir, nhl_master_filename)
+        nfl_master_fp = os.path.join(self.data_base_dir, nfl_master_filename)
+
+
+        # Read in files with their dates
+        ## football/soccer
+        df_fb = pd.read_csv(
+            fb_master_fp,
+            parse_dates=['Date'], 
+            date_parser=fb_date_parser
+        )
+        ### Create/convert cols as necessary
+        df_fb['Date'] = pd.to_datetime(df_fb['Date']).dt.date
+        df_fb = df_fb[df_fb['Date'] >= self.today]
+        df_fb['Time'] = df_fb['Time'].astype(str).str.replace(r'\s+', '', regex=True)
+        df_fb['Time'] = df_fb['Time'].replace('-', pd.NA)
+        df_fb['Time'] = pd.to_datetime(df_fb['Time'], format='%H:%M').dt.time
+
+
+        ## nba
+        df_nba = pd.read_csv(
+            nba_master_fp,
+            parse_dates=['Date'], 
+            date_parser=nba_nhl_date_parser
+        )
+        ### Create/convert cols as necessary
+        df_nba['Date'] = pd.to_datetime(df_nba['Date']).dt.date
+        df_nba = self.org_assign_teams(df_nba, 'Home/Away', 'user_team', 'Opponent')
+        df_nba['Start (ET)'] = pd.to_datetime(df_nba['Start (ET)'], infer_datetime_format=True).dt.time
+        df_nba = df_nba.rename(columns={'Start (ET)': 'Time'})
+        df_nba['Time'] = pd.to_datetime(df_nba['Time'].astype(str)) - pd.to_timedelta(2, unit='hours')
+        df_nba['Time'] = df_nba['Time'].dt.time
+
+
+        ## nhl
+        df_nhl = pd.read_csv(
+            nhl_master_fp,
+            parse_dates=['Date'], 
+            date_parser=nba_nhl_date_parser
+        )
+        ### Create/convert cols as necessary
+        df_nhl['Date'] = pd.to_datetime(df_nhl['Date']).dt.date
+        df_nhl = self.org_assign_teams(df_nhl, 'Home/Away', 'user_team', 'Opponent')
+        df_nhl['Time'] = pd.to_datetime(df_nhl['Time'], infer_datetime_format=True).dt.time
+        df_nhl['Time'] = pd.to_datetime(df_nhl['Time'].astype(str)) - pd.to_timedelta(2, unit='hours')
+        df_nhl['Time'] = df_nhl['Time'].dt.time
+
+
+        ## nfl
+        df_nfl = pd.read_csv(
+            nfl_master_fp,
+            parse_dates=['DATE'], 
+            date_parser=nfl_date_parser
+        )
+        df_nfl['DATE'] = pd.to_datetime(df_nfl['DATE']).dt.date
+        df_nfl = self.org_assign_teams(df_nfl, 'Home/Away', 'user_team', 'OPPONENT')
+        df_nfl['TIME'] = pd.to_datetime(df_nfl['TIME'], infer_datetime_format=True).dt.time
+        df_nfl['TIME'] = pd.to_datetime(df_nfl['TIME'].astype(str)) - pd.to_timedelta(2, unit='hours')
+        df_nfl['TIME'] = df_nfl['TIME'].dt.time
+
+
+        ## Combine data
+        # First, rename and reorder columns in df_fb
+        df_fb_fin = df_fb.rename(columns={'Team': 'user_team', 'League': 'game_type'})
+        df_fb_fin = df_fb_fin[['user_team', 'Date', 'game_type', 'Home Team', 'Away Team', 'Time']].copy()
+        df_fb_fin['Sport'] = 'Soccer'
+
+        # Select and reorder columns in df_nba and df_nhl
+        fin_cols_list = ['user_team', 'Date', 'game_type', 'Home Team', 'Away Team', 'Time']
+        df_nba_fin = df_nba[fin_cols_list].copy()
+        df_nba_fin['Sport'] = 'NBA'
+
+        df_nhl_fin = df_nhl[fin_cols_list].copy()
+        df_nhl_fin['Sport'] = 'NHL'
+
+        # Select and reorder columns in df_nfl
+        df_nfl_fin = df_nfl[['user_team','DATE','game_type','Home Team','Away Team', 'TIME']].copy()
+        df_nfl_fin.columns = fin_cols_list
+        df_nfl_fin['Sport'] = 'NFL'
+
+
+        # Stack all dataframes and Sort the combined dataframe by Date and then by Time, both in ascending order
+        df_fin_all = (
+            pd.concat([df_fb_fin, df_nba_fin, df_nhl_fin, df_nfl_fin], ignore_index=True)
+            .sort_values(by=['Date', 'Time', 'Home Team'], ascending=[True, True, True])
+            .reset_index(drop=True)
+        )
+
+        df_fin_future = df_fin_all[df_fin_all['Date'] >= self.today]
+
+
+        ## Save dfs
+        # Define the file name
+        master_filename = f"df_master_{self.today_str}.csv"
+        master_fut_filename = f"df_master_future_{self.today_str}.csv"
+
+        master_folder_path = os.path.join(self.data_base_dir, "master")
+        master_fut_folder_path = os.path.join(self.data_base_dir, "master_future")
+
+        master_fp = os.path.join(master_folder_path, master_filename)
+        master_fut_fp = os.path.join(master_fut_folder_path, master_fut_filename)
+
+
+        # Save DataFrames based on the save option
+        if save == "both":
+            df_fin_all.to_csv(master_fp, index=False)
+            df_fin_future.to_csv(master_fut_fp, index=False)
+        elif save == "master":
+            df_fin_all.to_csv(master_fp, index=False)
+        elif save == "future":
+            df_fin_future.to_csv(master_fut_fp, index=False)
+        
+
+
+
+    # Function for home/away cols for nba/nhl/nfl
+    def org_assign_teams(self, df, home_away_col, user_team_col, opponent_col):
+        df['Home Team'] = np.where(df[home_away_col] == 'vs.', df[user_team_col], df[opponent_col])
+        df['Away Team'] = np.where(df[home_away_col] == '@', df[user_team_col], df[opponent_col])
+        return df
+    
+
+
+    # End organizing the data
+    ##############################################################################################################
