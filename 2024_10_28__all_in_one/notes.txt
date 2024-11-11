@@ -1,3 +1,19 @@
+----
+2024-11-10
+
+-Test:
+ - scrape
+ - org and save
+
+-Build a method in the same library to upload the selected file to gsheets
+ - need to create a gsheet for this 
+  - make sure to add the account email to the allowed editor
+
+
+
+----
+2024-11-07
+
 Maybe we re-structure this so that we keep the data locally and don't have to scrape every call.
 -lots of obv. positives
 -downside is data will not be as up to date
@@ -8,3 +24,4 @@ Steps:
 1. Grab as much data as possible for all the leagues
 2. Insert into a consolidated csv
 3. Build upsert script
+----
