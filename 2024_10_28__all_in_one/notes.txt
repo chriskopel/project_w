@@ -3,17 +3,19 @@
 
 -Test:
  - scrape
-  - done
+  --*DONE*
  - org and save
-  - done
+  --*DONE*
 
 -Build a method in the same library to upload the selected file to gsheets
  - need to create a gsheet for this 
   - make sure to add the account email to the allowed editor
+ --*DONE*
 
 Future Notes:
 -- For the FB scrape, maybe try opening one window and then redirecting to the new url once data is grabbed instead of of closing and opening every time, then we'll only have to reject cookies once and everything should go quicker
 -- Lots of warnings for the date/time inference when reading in the pandas dfs for the organize_data() method (FutureWarning: The argument 'date_parser', UserWarning: Could not infer format, etc.)
+-- For the gsheet upload, might need to format the columns in code. Depends on how it'll work when the app pulls from the gsheet
 
 
 
