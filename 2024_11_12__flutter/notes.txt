@@ -1,0 +1,3 @@
+-------
+2024-11-12
+- start building the app w flutter - nothing done so far
