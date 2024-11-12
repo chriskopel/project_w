@@ -1,2 +1,8 @@
 # Git ignore file
 2024_10_28__all_in_one/data/
+
+# Ignore everything in the data directory
+/data/*
+
+# But do not ignore the metadata subdirectory within data
+!/data/metadata/
