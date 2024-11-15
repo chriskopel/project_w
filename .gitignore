@@ -6,3 +6,6 @@
 
 # But do not ignore the metadata subdirectory within data
 !/data/metadata/
+
+# Ignore the copied df_master_future file in the flutter assets folder
+/2024_11_12__flutter/project_w/assets/project_w_data.csv

@@ -1,3 +1,10 @@
 -------
+2024-11-14
+- functionality to select teams from the unique, sorted list and then hit the load schedule button to see all the teams printed out on the next screen
+
+--now, when the user hits "Load Schedule", we need to parse that data and print out the schedule for everything >= today for those selected teams, for the next n days
+
+
+-------
 2024-11-12
 - start building the app w flutter - nothing done so far
