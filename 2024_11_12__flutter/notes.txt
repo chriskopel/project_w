@@ -1,4 +1,12 @@
 -------
+2024-11-15
+- got the schedule to output for all selected teams for the next 6 days
+
+-- update the time to reflect the user's timezone
+-- bold the selected teams in the schedule view? chatgpt didn't get that on right on the first go around
+
+
+-------
 2024-11-14
 - functionality to select teams from the unique, sorted list and then hit the load schedule button to see all the teams printed out on the next screen
 
