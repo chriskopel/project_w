@@ -1,4 +1,13 @@
 -------
+2024-11-16
+- with the help of perplexity, accomplished the following (per 11-15's notes):
+-- update the time to reflect the user's timezone
+-- bold the selected teams in the schedule view
+
+-...though haven't thoroughly tested the tz thing because we've only used it on this device which was already mountain time
+
+
+-------
 2024-11-15
 - got the schedule to output for all selected teams for the next 6 days
 

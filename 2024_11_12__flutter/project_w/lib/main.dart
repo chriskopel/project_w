@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_native_timezone/flutter_native_timezone.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
+
 
 void main() {
   runApp(const MyApp());
@@ -204,14 +208,59 @@ class _SchedulePageState extends State<SchedulePage> {
     loadAndFilterData();
   }
 
+  RichText formatRowWithBoldTeams(String row, List<String> selectedTeams) {
+    List<TextSpan> spans = [];
+    List<String> parts = row.split(' @ ');
+    
+    // Handle away team
+    if (selectedTeams.contains(parts[0])) {
+      spans.add(TextSpan(text: parts[0], style: const TextStyle(fontWeight: FontWeight.bold)));
+    } else {
+      spans.add(TextSpan(text: parts[0]));
+    }
+    
+    spans.add(const TextSpan(text: ' @ '));
+    
+    // Handle home team and the rest
+    List<String> homeParts = parts[1].split(' (');
+    if (selectedTeams.contains(homeParts[0])) {
+      spans.add(TextSpan(text: homeParts[0], style: const TextStyle(fontWeight: FontWeight.bold)));
+    } else {
+      spans.add(TextSpan(text: homeParts[0]));
+    }
+    
+    spans.add(TextSpan(text: ' (${homeParts[1]}'));
+
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(fontSize: 14, color: Colors.black),
+        children: spans,
+      ),
+    );
+  }
+
+  Future<String> convertToUserTimezone(String timeString, String dateString) async {
+    tz.initializeTimeZones();
+
+    DateTime mountainTime = DateFormat('HH:mm:ss yyyy-MM-dd').parse('$timeString $dateString');
+    
+    final mountainTimeZone = tz.getLocation('America/Denver');
+    final mountainDateTime = tz.TZDateTime.from(mountainTime, mountainTimeZone);
+
+    String localTimeZoneName = await FlutterNativeTimezone.getLocalTimezone();
+    final localTimeZone = tz.getLocation(localTimeZoneName);
+
+    final localDateTime = tz.TZDateTime.from(mountainDateTime, localTimeZone);
+
+    return DateFormat('h:mm a').format(localDateTime);
+  }
+
   Future<void> loadAndFilterData() async {
     final data = await rootBundle.loadString('assets/project_w_data.csv');
 
-    // Parse CSV data
     List<List<dynamic>> csvTable =
         CsvToListConverter(eol: '\n', fieldDelimiter: ',').convert(data);
 
-    // Extract header and column indices
     final headerRow = csvTable[0];
     final userTeamIndex = headerRow.indexOf('user_team');
     final dateIndex = headerRow.indexOf('Date');
@@ -221,7 +270,6 @@ class _SchedulePageState extends State<SchedulePage> {
     final timeIndex = headerRow.indexOf('Time');
     final gameTypeIndex = headerRow.indexOf('game_type');
 
-    // Filter data based on selected teams and date range
     final today = DateTime.now();
     final endDate = today.add(const Duration(days: 5));
     final filteredRows = csvTable.skip(1).where((row) {
@@ -233,31 +281,36 @@ class _SchedulePageState extends State<SchedulePage> {
           rowDate.isBefore(endDate.add(const Duration(days: 1)));
     }).toList();
 
-    // Format and group the data by date
     final groupedData = <String, List<String>>{};
     for (var row in filteredRows) {
       final rowDate = DateTime.tryParse(row[dateIndex]?.toString() ?? '');
       if (rowDate != null) {
         final formattedDate = DateFormat("EEEE, MMM d'th'").format(rowDate);
 
-        // Format the row as "Away Team @ Home Team (Sport) - Time"
         final awayTeam = row[awayTeamIndex]?.toString();
         final homeTeam = row[homeTeamIndex]?.toString();
         final sport = row[sportIndex]?.toString();
         final time = row[timeIndex]?.toString();
         final gameType = row[gameTypeIndex]?.toString();
-        final formattedRow = "$awayTeam @ $homeTeam ($sport - $gameType) - $time";
+        
+        // Convert time to user's timezone
+        final convertedTime = await convertToUserTimezone(time!, row[dateIndex].toString());
+        
+        final formattedRow = "$awayTeam @ $homeTeam ($sport - $gameType) - $convertedTime";
 
         groupedData.putIfAbsent(formattedDate, () => []).add(formattedRow);
       }
     }
 
-    // Update state with formatted and grouped data
+
     setState(() {
       formattedDataByDate = groupedData;
       isLoading = false;
     });
   }
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -304,10 +357,10 @@ class _SchedulePageState extends State<SchedulePage> {
                                     fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 8),
-                              ...rows.map((row) => Text(
-                                    row,
-                                    style: const TextStyle(fontSize: 14),
-                                  )),
+                              ...rows.map((row) => Padding(
+                                padding: const EdgeInsets.only(bottom: 4.0),
+                                child: formatRowWithBoldTeams(row, widget.selectedTeams),
+                              )),
                             ],
                           ),
                         );
@@ -320,20 +373,4 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
-
-
-  // Helper function to get the suffix for the day (st, nd, rd, th)
-  String _getDaySuffix(int day) {
-    if (day >= 11 && day <= 13) return 'th';
-    switch (day % 10) {
-      case 1:
-        return 'st';
-      case 2:
-        return 'nd';
-      case 3:
-        return 'rd';
-      default:
-        return 'th';
-    }
-  }
 }
